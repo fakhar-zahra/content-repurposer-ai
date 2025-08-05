@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Content Repurposing Tool</title>
+
+    <!-- Embedded CSS -->
+    <style>
+        /* General page setup */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* Container to center content */
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 1rem;
+        }
+
+        /* Headings */
+        h1, h2, h3 {
+            text-align: center;
+            color: #222;
+        }
+
+        /* Box container */
+        .box {
+            background: rgba(255, 255, 255, 0.55);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(100, 100, 200, 0.18);
+            padding: 1.2em;
+            margin-bottom: 1.5em;
+            transition: box-shadow 0.2s, transform 0.2s;
+            border: 1px solid rgba(255,255,255,0.25);
+            backdrop-filter: blur(6px);
+            font-size: 0.9rem;
+            max-width: 100%;
+        }
+
+        .box:hover {
+            box-shadow: 0 6px 28px rgba(100, 100, 200, 0.28);
+            transform: translateY(-4px);
+        }
+
+        .output-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 1.2rem;
+        }
+
+        .box img {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+
+        button, .btn {
+            background-color: #5567dd;
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.3s;
+            margin: 5px 5px 5px 0;
+        }
+
+        button:hover, .btn:hover {
+            background-color: #3f4fbb;
+        }
+
+        a {
+            color: #5567dd;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .mic-btn {
+            margin-left: 8px;
+            padding: 8px 12px;
+            font-size: 1.2rem;
+        }
+
+        .mic-btn.active {
+            background-color: #ff8888;
+        }
+
+        .actions {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            resize: vertical;
+            font-size: 1rem;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .copy-btn {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            padding: 6px 12px;
+        }
+
+        .box-title {
+            font-weight: bold;
+            margin-bottom: 0.5em;
+            font-size: 1.1rem;
+        }
+
+        .flashes {
+            list-style: none;
+            padding: 0;
+        }
+
+        .flashes li {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .flashes .error {
+            background-color: #ffd1d1;
+            color: #a00;
+        }
+
+        .flashes .success {
+            background-color: #d1ffd1;
+            color: #060;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #5567dd;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .dark-mode {
+            background-color: #1e1e1e;
+            color: #ddd;
+        }
+
+        .dark-mode .box {
+            background: rgba(40, 40, 40, 0.6);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .dark-mode textarea {
+            background-color: #333;
+            color: #fff;
+            border-color: #444;
+        }
+    </style>
+
+    <!-- Scripts -->
+    <script>
+    function copyToClipboard(id) {
+        const el = document.getElementById(id);
+        navigator.clipboard.writeText(el.innerText);
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+    }
+
+    let recognition;
+    function startMic() {
+        if (!('webkitSpeechRecognition' in window)) {
+            alert('Speech recognition not supported');
+            return;
+        }
+        recognition = new webkitSpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.onresult = function(event) {
+            document.getElementById('longform').value = event.results[0][0].transcript;
+        };
+        recognition.start();
+        document.getElementById('mic-btn').classList.add('active');
+        recognition.onend = function() {
+            document.getElementById('mic-btn').classList.remove('active');
+        };
+    }
+
+    window.onload = function() {
+        const form = document.querySelector('form');
+        if(form) {
+            form.onsubmit = function() {
+                document.getElementById('spinner').style.display = 'block';
+            }
+        }
+    }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Content Repurposing Tool</h1>
+        <div class="actions">
+            <a href="/download_csv" class="btn">Download CSV</a>
+            <a href="/download_txt" class="btn">Download TXT</a>
+            <a href="/clear_csv" class="btn btn-danger">Clear All</a>
+            <a href="/history" class="btn">History</a>
+            <button onclick="toggleDarkMode()" class="btn">Toggle Dark Mode</button>
+        </div>
+
+        <div id="spinner" style="display:none;text-align:center;">
+            <div class="loader"></div>
+            <span>Generating AI outputs...</span>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <ul class="flashes">
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <label>Select platforms:</label><br>
+            <input type="checkbox" name="platforms" value="linkedin" checked> LinkedIn
+            <input type="checkbox" name="platforms" value="instagram" checked> Instagram
+            <input type="checkbox" name="platforms" value="newsletter" checked> Newsletter
+            <input type="checkbox" name="platforms" value="blog" checked> Blog
+            <input type="checkbox" name="platforms" value="summary" checked> Summary
+            <br><br>
+            <div style="display:flex;align-items:center;">
+                <textarea id="longform" name="longform" rows="8" placeholder="Paste or dictate your long-form content...">{{ longform }}</textarea>
+                <button type="button" class="mic-btn" id="mic-btn" onclick="startMic()">🎤</button>
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+
+        {% if outputs %}
+            <div class="output-grid">
+                <div class="box">
+                    <div class="box-title">LinkedIn Post</div>
+                    <div id="linkedin">{{ outputs['linkedin'] }}</div>
+                    <button class="copy-btn" onclick="copyToClipboard('linkedin')">Copy</button>
+                    <small>Word count: {{ outputs['linkedin_count'] }}</small>
+                </div>
+                <div class="box">
+                    <div class="box-title">Instagram Caption</div>
+                    <div id="instagram">{{ outputs['instagram'] }}</div>
+                    <button class="copy-btn" onclick="copyToClipboard('instagram')">Copy</button>
+                    <small>Word count: {{ outputs['instagram_count'] }}</small>
+                </div>
+                <div class="box">
+                    <div class="box-title">Newsletter Email</div>
+                    <div id="newsletter">{{ outputs['newsletter'] }}</div>
+                    <button class="copy-btn" onclick="copyToClipboard('newsletter')">Copy</button>
+                    <small>Word count: {{ outputs['newsletter_count'] }}</small>
+                </div>
+                <div class="box">
+                    <div class="box-title">Blog Meta Description &amp; H1</div>
+                    <div id="blog">{{ outputs['blog'] }}</div>
+                    <button class="copy-btn" onclick="copyToClipboard('blog')">Copy</button>
+                    <small>Word count: {{ outputs['blog_count'] }}</small>
+                </div>
+                <div class="box">
+                    <div class="box-title">Summary</div>
+                    <div id="summary">{{ outputs['summary'] }}</div>
+                    <button class="copy-btn" onclick="copyToClipboard('summary')">Copy</button>
+                    <small>Word count: {{ outputs['summary_count'] }}</small>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
